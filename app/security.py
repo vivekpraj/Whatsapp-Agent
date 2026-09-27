@@ -17,19 +17,14 @@ def verify_signature(payload_bytes: bytes, signature_header: str | None) -> bool
         logger.warning("No signature header — rejecting")
         return False
 
-    # Kapso sends: "sha256=<hex_digest>"
-    prefix = "sha256="
-    if not signature_header.startswith(prefix):
-        logger.warning("Unexpected signature format: %s", signature_header)
-        return False
-
     expected = hmac.new(
         KAPSO_WEBHOOK_SECRET.encode("utf-8"),
         payload_bytes,
         hashlib.sha256,
     ).hexdigest()
 
-    received = signature_header[len(prefix):]
+    # Kapso sends raw hex (no "sha256=" prefix)
+    received = signature_header.removeprefix("sha256=")
     match = hmac.compare_digest(expected, received)
     logger.info("Signature match: %s | expected: %s | received: %s", match, expected, received)
     return match

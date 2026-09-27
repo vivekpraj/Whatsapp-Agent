@@ -36,7 +36,7 @@ async def health():
 async def webhook(request: Request):
     payload_bytes = await request.body()
     logger.info("Incoming headers: %s", dict(request.headers))
-    signature = request.headers.get("x-kapso-signature")
+    signature = request.headers.get("x-webhook-signature")
 
     if not verify_signature(payload_bytes, signature):
         raise HTTPException(status_code=401, detail="Invalid signature")
