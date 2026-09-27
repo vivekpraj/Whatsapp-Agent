@@ -1,7 +1,11 @@
 from contextlib import asynccontextmanager
+import logging
 
 import uvicorn
 from fastapi import FastAPI, Request, Response, HTTPException
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from app.config import PORT
 from app.security import verify_signature
@@ -31,6 +35,7 @@ async def health():
 @app.post("/webhook")
 async def webhook(request: Request):
     payload_bytes = await request.body()
+    logger.info("Incoming headers: %s", dict(request.headers))
     signature = request.headers.get("x-kapso-signature")
 
     if not verify_signature(payload_bytes, signature):
