@@ -41,11 +41,13 @@ def _parse_reminder_with_gemini(text: str) -> dict | None:
 
     logger.info("LLM raw response: %s", raw)
 
-    # Strip <think>...</think> blocks from reasoning models
+    # Strip <think>...</think> blocks and anything before the first {
     raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+    if "{" in raw:
+        raw = raw[raw.index("{"):]
 
     # Extract JSON block
-    json_match = re.search(r"\{.*\}", raw, re.DOTALL)
+    json_match = re.search(r"\{.*?\}", raw, re.DOTALL)
     if not json_match:
         logger.warning("No JSON found in LLM response")
         return None

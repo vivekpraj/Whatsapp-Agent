@@ -16,7 +16,6 @@ def chat(messages: list[dict], max_tokens: int = 300, temperature: float = 0.7) 
         "messages": messages,
         "max_tokens": max_tokens,
         "temperature": temperature,
-        "extra_body": {"chat_template_kwargs": {"enable_thinking": False}},
     }
     headers = {
         "Authorization": f"Bearer {GEMINI_API_KEY}",
