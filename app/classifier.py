@@ -8,11 +8,12 @@ URL_PATTERN = re.compile(
 
 # Matches common reminder phrases
 REMINDER_PATTERN = re.compile(
-    r"\b(remind(er)?|remind me|set a reminder|alert me|notify me)\b"
-    r"|(\bat\s+\d+\s*(am|pm)\b)"
+    r"\b(remind(er)?|remind me|set a reminder|alert me|notify me|wake me|ping me)\b"
+    r"|(\bat\s+\d+(\:\d+)?\s*(am|pm)?\b)"
     r"|(\btomorrow\b|\btonight\b|\bmonday\b|\btuesday\b|\bwednesday\b"
     r"|\bthursday\b|\bfriday\b|\bsaturday\b|\bsunday\b)"
-    r"|(\bin\s+\d+\s*(hour|hours|hr|hrs|minute|minutes|min|mins)\b)",
+    r"|(\bnext\s+(week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b)"
+    r"|(\bin\s+\d+\s*(hour|hours|hr|hrs|minute|minutes|min|mins|day|days)\b)",
     re.IGNORECASE,
 )
 

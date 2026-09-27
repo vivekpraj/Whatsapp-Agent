@@ -14,11 +14,11 @@ IST = pytz.timezone("Asia/Kolkata")
 logger = logging.getLogger(__name__)
 
 PARSE_PROMPT = (
-    "Extract the reminder datetime and task from the message below. "
-    "Today's date and time in IST is {now}. "
-    "Return ONLY valid JSON in this exact format with no extra text: "
-    '{{"datetime_ist": "YYYY-MM-DDTHH:mm", "task": "short task description"}}. '
-    "If you cannot determine the time, set datetime_ist to null."
+    "You are a JSON extraction tool. Output ONLY a single JSON object, no explanation, no thinking, no markdown.\n"
+    "Today in IST: {now}.\n"
+    "Extract the reminder from the user message and output exactly:\n"
+    '{{"datetime_ist": "2026-09-28T10:00", "task": "mail a client"}}\n'
+    "Use the real date and time values. If time is unclear, set datetime_ist to null."
 )
 
 
@@ -41,7 +41,10 @@ def _parse_reminder_with_gemini(text: str) -> dict | None:
 
     logger.info("LLM raw response: %s", raw)
 
-    # Extract JSON block if wrapped in markdown code fences
+    # Strip <think>...</think> blocks from reasoning models
+    raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+
+    # Extract JSON block
     json_match = re.search(r"\{.*\}", raw, re.DOTALL)
     if not json_match:
         logger.warning("No JSON found in LLM response")
