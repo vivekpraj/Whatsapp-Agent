@@ -41,7 +41,12 @@ async def webhook(request: Request):
     if not verify_signature(payload_bytes, signature):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
-    body = await request.json() if payload_bytes else {}
+    try:
+        import json as _json
+        body = _json.loads(payload_bytes) if payload_bytes else {}
+    except Exception as e:
+        logger.exception("Failed to parse body: %s", e)
+        body = {}
     event = body.get("event", "")
 
     if event != "whatsapp.message.received":
