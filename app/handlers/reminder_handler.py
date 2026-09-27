@@ -35,7 +35,7 @@ def _parse_reminder_with_gemini(text: str) -> dict | None:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text},
         ],
-        max_tokens=100,
+        max_tokens=400,
         temperature=0,
     )
 
