@@ -2,17 +2,13 @@ import time
 import requests
 from app.config import GEMINI_API_KEY
 
-NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NVIDIA_MODEL = "nv-mistralai/mistral-nemo-12b-instruct"
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODEL = "qwen/qwen2.5-72b-instruct:free"
 
 
 def chat(messages: list[dict], max_tokens: int = 300, temperature: float = 0.7) -> str:
-    """
-    Send a chat request to NVIDIA NIM (OpenAI-compatible).
-    Retries once on 429 (rate limit).
-    """
     payload = {
-        "model": NVIDIA_MODEL,
+        "model": OPENROUTER_MODEL,
         "messages": messages,
         "max_tokens": max_tokens,
         "temperature": temperature,
@@ -23,13 +19,13 @@ def chat(messages: list[dict], max_tokens: int = 300, temperature: float = 0.7) 
     }
 
     for attempt in range(2):
-        resp = requests.post(NVIDIA_URL, headers=headers, json=payload, timeout=20)
+        resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=20)
         if resp.status_code == 429 and attempt == 0:
             time.sleep(5)
             continue
         if not resp.ok:
             import logging
-            logging.getLogger(__name__).error("NVIDIA NIM error %s: %s", resp.status_code, resp.text)
+            logging.getLogger(__name__).error("OpenRouter error %s: %s", resp.status_code, resp.text)
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"].strip()
 
