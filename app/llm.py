@@ -3,7 +3,7 @@ import requests
 from app.config import GEMINI_API_KEY
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_MODEL = "qwen/qwen2.5-72b-instruct:free"
+OPENROUTER_MODEL = "google/gemma-4-26b-a4b-it:free"
 
 
 def chat(messages: list[dict], max_tokens: int = 300, temperature: float = 0.7) -> str:
