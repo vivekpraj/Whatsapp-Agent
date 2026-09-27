@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from datetime import datetime
 
@@ -10,6 +11,7 @@ from app.scheduler import scheduler
 from app.kapso import send_reply
 
 IST = pytz.timezone("Asia/Kolkata")
+logger = logging.getLogger(__name__)
 
 PARSE_PROMPT = (
     "Extract the reminder datetime and task from the message below. "
@@ -37,9 +39,12 @@ def _parse_reminder_with_gemini(text: str) -> dict | None:
         temperature=0,
     )
 
+    logger.info("LLM raw response: %s", raw)
+
     # Extract JSON block if wrapped in markdown code fences
     json_match = re.search(r"\{.*\}", raw, re.DOTALL)
     if not json_match:
+        logger.warning("No JSON found in LLM response")
         return None
 
     parsed = json.loads(json_match.group())
