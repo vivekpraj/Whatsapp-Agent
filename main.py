@@ -67,6 +67,8 @@ async def webhook(request: Request):
 
     text = data.get("text", {}).get("body", "").strip()
     sender = data.get("from", "")
+    if sender and not sender.startswith("+"):
+        sender = "+" + sender
 
     intent = classify(text)
     logger.info("Message from %s | intent: %s | text: %s", sender, intent, text)
