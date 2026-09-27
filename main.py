@@ -47,13 +47,21 @@ async def webhook(request: Request):
     except Exception as e:
         logger.exception("Failed to parse body: %s", e)
         body = {}
-    event = body.get("event", "")
+
+    logger.info("Body: %s", body)
+
+    # v2 payload: event is in the x-webhook-event header, not body
+    event = request.headers.get("x-webhook-event", body.get("event", ""))
 
     if event != "whatsapp.message.received":
+        logger.info("Ignoring event: %s", event)
         return Response(status_code=200)
 
-    data = body.get("data", {})
+    # v2 payload may use top-level body or nested under "data"
+    data = body.get("data", body)
     msg_type = data.get("type", "")
+    logger.info("msg_type: %s | data keys: %s", msg_type, list(data.keys()))
+
     if msg_type != "text":
         return Response(status_code=200)
 
