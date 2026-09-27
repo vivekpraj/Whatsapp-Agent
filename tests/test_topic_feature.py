@@ -83,20 +83,10 @@ def test_scraper_detects_join_now_as_blocked(mock_get):
 
 # ── get_topic in link_handler ─────────────────────────────────────────────────
 
-def _mock_groq_topic(topic: str):
-    mock = MagicMock()
-    mock.raise_for_status = MagicMock()
-    mock.json.return_value = {
-        "choices": [{"message": {"content": topic}}]
-    }
-    return mock
-
-
-@patch("app.handlers.link_handler.http_requests.post")
+@patch("app.handlers.link_handler.chat", return_value="Fast ML library for Python")
 @patch("app.scraper.requests.get")
-def test_get_topic_returns_groq_summary_when_jina_works(mock_jina, mock_groq):
+def test_get_topic_returns_gemini_summary_when_jina_works(mock_jina, mock_chat):
     mock_jina.return_value = _mock_jina("A fast machine learning library for Python developers.")
-    mock_groq.return_value = _mock_groq_topic("Fast ML library for Python")
     from app.handlers.link_handler import get_topic
     topic = get_topic("https://github.com/user/repo", "github")
     assert topic == "Fast ML library for Python"
@@ -118,11 +108,11 @@ def test_get_topic_falls_back_for_instagram(mock_jina):
     assert topic == "Instagram post"
 
 
-@patch("app.handlers.link_handler.http_requests.post")
+@patch("app.handlers.link_handler.chat")
 @patch("app.scraper.requests.get")
-def test_get_topic_falls_back_when_groq_fails(mock_jina, mock_groq):
+def test_get_topic_falls_back_when_gemini_fails(mock_jina, mock_chat):
     mock_jina.return_value = _mock_jina("A" * 200)
-    mock_groq.side_effect = Exception("groq error")
+    mock_chat.side_effect = Exception("gemini error")
     from app.handlers.link_handler import get_topic
     topic = get_topic("https://github.com/user/repo", "github")
     assert topic == "GitHub repository"

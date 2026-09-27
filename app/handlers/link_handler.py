@@ -7,16 +7,15 @@ from urllib.parse import urlparse
 import gspread
 from google.oauth2.service_account import Credentials
 
-from app.config import SHEET_ID, GOOGLE_SERVICE_ACCOUNT_JSON, GROQ_API_KEY
+from app.config import SHEET_ID, GOOGLE_SERVICE_ACCOUNT_JSON
 from app.classifier import extract_url
 from app.scraper import fetch_content
+from app.llm import chat
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
-
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 LINK_TYPE_MAP = {
     "github.com": "github",
@@ -72,36 +71,25 @@ def extract_note(text: str, url: str) -> str:
 
 
 def _generate_topic(content: str, url: str) -> str:
-    """Ask Groq to summarize page content into a single topic line."""
+    """Ask Gemini to summarize page content into a single topic line."""
     try:
-        resp = http_requests.post(
-            GROQ_URL,
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "llama-3.1-8b-instant",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": (
-                            "You summarize web page content into a single short topic line "
-                            "of at most 10 words. No punctuation at the end. Plain text only."
-                        ),
-                    },
-                    {
-                        "role": "user",
-                        "content": f"URL: {url}\n\nContent:\n{content}",
-                    },
-                ],
-                "max_tokens": 30,
-                "temperature": 0,
-            },
-            timeout=15,
+        return chat(
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You summarize web page content into a single short topic line "
+                        "of at most 10 words. No punctuation at the end. Plain text only."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"URL: {url}\n\nContent:\n{content}",
+                },
+            ],
+            max_tokens=30,
+            temperature=0,
         )
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
     except Exception:
         return ""
 

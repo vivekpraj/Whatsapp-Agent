@@ -59,7 +59,7 @@ def test_render_yaml_has_all_env_vars():
         "KAPSO_API_KEY",
         "KAPSO_PHONE_NUMBER_ID",
         "KAPSO_WEBHOOK_SECRET",
-        "GROQ_API_KEY",
+        "GEMINI_API_KEY",
         "SHEET_ID",
         "GOOGLE_SERVICE_ACCOUNT_JSON",
         "USER_PHONE_NUMBER",

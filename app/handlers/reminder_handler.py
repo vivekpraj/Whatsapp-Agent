@@ -1,16 +1,15 @@
 import json
 import re
-import requests
 from datetime import datetime
 
 import pytz
 
-from app.config import GROQ_API_KEY, USER_PHONE_NUMBER
+from app.config import USER_PHONE_NUMBER
+from app.llm import chat
 from app.scheduler import scheduler
 from app.kapso import send_reply
 
 IST = pytz.timezone("Asia/Kolkata")
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 PARSE_PROMPT = (
     "Extract the reminder datetime and task from the message below. "
@@ -21,33 +20,22 @@ PARSE_PROMPT = (
 )
 
 
-def _parse_reminder_with_groq(text: str) -> dict | None:
+def _parse_reminder_with_gemini(text: str) -> dict | None:
     """
-    Call Groq to extract datetime and task from natural language.
+    Call Gemini to extract datetime and task from natural language.
     Returns {"datetime_ist": "YYYY-MM-DDTHH:mm", "task": "..."} or None on failure.
     """
     now_str = datetime.now(IST).strftime("%Y-%m-%d %H:%M")
     system_prompt = PARSE_PROMPT.format(now=now_str)
 
-    response = requests.post(
-        GROQ_URL,
-        headers={
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json={
-            "model": "llama-3.1-8b-instant",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text},
-            ],
-            "max_tokens": 100,
-            "temperature": 0,
-        },
-        timeout=15,
+    raw = chat(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text},
+        ],
+        max_tokens=100,
+        temperature=0,
     )
-    response.raise_for_status()
-    raw = response.json()["choices"][0]["message"]["content"].strip()
 
     # Extract JSON block if wrapped in markdown code fences
     json_match = re.search(r"\{.*\}", raw, re.DOTALL)
@@ -70,7 +58,7 @@ def handle_reminder(text: str, sender: str) -> str:
     Parse the reminder from natural language, schedule it,
     and return a confirmation reply string.
     """
-    parsed = _parse_reminder_with_groq(text)
+    parsed = _parse_reminder_with_gemini(text)
 
     if not parsed:
         return "Sorry, I could not understand the reminder time. Try: 'Remind me at 6pm to call John'."

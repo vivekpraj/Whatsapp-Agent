@@ -11,26 +11,14 @@ FUTURE_DT = (datetime.now(IST) + timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M")
 PAST_DT   = (datetime.now(IST) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M")
 
 
-def _mock_groq_response(datetime_ist: str, task: str):
-    """Build a fake Groq API response."""
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {
-        "choices": [{
-            "message": {
-                "content": json.dumps({"datetime_ist": datetime_ist, "task": task})
-            }
-        }]
-    }
-    return mock_resp
+def _gemini_json(datetime_ist: str, task: str) -> str:
+    return json.dumps({"datetime_ist": datetime_ist, "task": task})
 
 
-# --- Groq parsing ---
+# --- Gemini parsing ---
 
-@patch("app.handlers.reminder_handler.requests.post")
-def test_future_reminder_scheduled(mock_post):
-    mock_post.return_value = _mock_groq_response(FUTURE_DT, "Call John")
-
+@patch("app.handlers.reminder_handler.chat", return_value=_gemini_json(FUTURE_DT, "Call John"))
+def test_future_reminder_scheduled(mock_chat):
     with patch("app.handlers.reminder_handler.scheduler") as mock_scheduler:
         from app.handlers.reminder_handler import handle_reminder
         reply = handle_reminder("Remind me in 3 hours to call John", "+911234567890")
@@ -40,57 +28,29 @@ def test_future_reminder_scheduled(mock_post):
     assert "Reminder set" in reply
 
 
-@patch("app.handlers.reminder_handler.requests.post")
-def test_past_reminder_rejected(mock_post):
-    mock_post.return_value = _mock_groq_response(PAST_DT, "Submit report")
-
+@patch("app.handlers.reminder_handler.chat", return_value=_gemini_json(PAST_DT, "Submit report"))
+def test_past_reminder_rejected(mock_chat):
     from app.handlers.reminder_handler import handle_reminder
     reply = handle_reminder("Remind me an hour ago to submit report", "+911234567890")
-
     assert "already passed" in reply.lower()
 
 
-@patch("app.handlers.reminder_handler.requests.post")
-def test_groq_returns_null_datetime(mock_post):
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {
-        "choices": [{"message": {"content": '{"datetime_ist": null, "task": "something"}'}}]
-    }
-    mock_post.return_value = mock_resp
-
+@patch("app.handlers.reminder_handler.chat", return_value='{"datetime_ist": null, "task": "something"}')
+def test_gemini_returns_null_datetime(mock_chat):
     from app.handlers.reminder_handler import handle_reminder
     reply = handle_reminder("Remind me sometime", "+911234567890")
-
     assert "could not understand" in reply.lower()
 
 
-@patch("app.handlers.reminder_handler.requests.post")
-def test_groq_returns_invalid_json(mock_post):
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {
-        "choices": [{"message": {"content": "I cannot determine the time."}}]
-    }
-    mock_post.return_value = mock_resp
-
+@patch("app.handlers.reminder_handler.chat", return_value="I cannot determine the time.")
+def test_gemini_returns_invalid_json(mock_chat):
     from app.handlers.reminder_handler import handle_reminder
     reply = handle_reminder("blah blah blah", "+911234567890")
-
     assert "could not understand" in reply.lower()
 
 
-@patch("app.handlers.reminder_handler.requests.post")
-def test_groq_json_in_markdown_fence_parsed(mock_post):
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {
-        "choices": [{"message": {"content":
-            f'```json\n{{"datetime_ist": "{FUTURE_DT}", "task": "gym"}}\n```'
-        }}]
-    }
-    mock_post.return_value = mock_resp
-
+@patch("app.handlers.reminder_handler.chat", return_value=f'```json\n{{"datetime_ist": "{FUTURE_DT}", "task": "gym"}}\n```')
+def test_gemini_json_in_markdown_fence_parsed(mock_chat):
     with patch("app.handlers.reminder_handler.scheduler"):
         from app.handlers.reminder_handler import handle_reminder
         reply = handle_reminder("Remind me in 3 hours to go to gym", "+911234567890")
@@ -100,10 +60,8 @@ def test_groq_json_in_markdown_fence_parsed(mock_post):
 
 # --- Scheduler job ---
 
-@patch("app.handlers.reminder_handler.requests.post")
-def test_scheduler_add_job_called_with_correct_args(mock_post):
-    mock_post.return_value = _mock_groq_response(FUTURE_DT, "Review the PR")
-
+@patch("app.handlers.reminder_handler.chat", return_value=_gemini_json(FUTURE_DT, "Review the PR"))
+def test_scheduler_add_job_called_with_correct_args(mock_chat):
     with patch("app.handlers.reminder_handler.scheduler") as mock_scheduler:
         from app.handlers.reminder_handler import handle_reminder
         handle_reminder("Remind me in 3 hours to review the PR", "+911234567890")

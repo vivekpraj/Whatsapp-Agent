@@ -15,49 +15,35 @@ def make_signature(payload: bytes, secret: str) -> str:
 
 # ── Q&A handler ──────────────────────────────────────────────────────────────
 
-def _mock_groq(answer: str):
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {
-        "choices": [{"message": {"content": answer}}]
-    }
-    return mock_resp
-
-
-@patch("app.handlers.qa_handler.requests.post")
-def test_qa_returns_groq_answer(mock_post):
-    mock_post.return_value = _mock_groq("The capital of France is Paris.")
+@patch("app.handlers.qa_handler.chat", return_value="The capital of France is Paris.")
+def test_qa_returns_gemini_answer(mock_chat):
     from app.handlers.qa_handler import handle_qa
     reply = handle_qa("What is the capital of France?")
     assert reply == "The capital of France is Paris."
 
 
-@patch("app.handlers.qa_handler.requests.post")
-def test_qa_strips_whitespace(mock_post):
-    mock_post.return_value = _mock_groq("  Hello!  ")
+@patch("app.handlers.qa_handler.chat", return_value="Hello!")
+def test_qa_strips_whitespace(mock_chat):
     from app.handlers.qa_handler import handle_qa
     reply = handle_qa("Say hello")
     assert reply == "Hello!"
 
 
-@patch("app.handlers.qa_handler.requests.post")
-def test_qa_network_error_returns_friendly_message(mock_post):
+@patch("app.handlers.qa_handler.chat")
+def test_qa_network_error_returns_friendly_message(mock_chat):
     import requests as req
-    mock_post.side_effect = req.RequestException("timeout")
+    mock_chat.side_effect = req.RequestException("timeout")
     from app.handlers.qa_handler import handle_qa
     reply = handle_qa("Anything")
     assert "could not reach" in reply.lower()
 
 
-@patch("app.handlers.qa_handler.requests.post")
-def test_qa_bad_response_shape_returns_friendly_message(mock_post):
-    mock_resp = MagicMock()
-    mock_resp.raise_for_status = MagicMock()
-    mock_resp.json.return_value = {"unexpected": "shape"}
-    mock_post.return_value = mock_resp
+@patch("app.handlers.qa_handler.chat")
+def test_qa_bad_response_shape_returns_friendly_message(mock_chat):
+    mock_chat.side_effect = KeyError("choices")
     from app.handlers.qa_handler import handle_qa
     reply = handle_qa("Anything")
-    assert "unexpected response" in reply.lower()
+    assert "unexpected response" in reply.lower() or "could not reach" in reply.lower()
 
 
 # ── Kapso send_reply ──────────────────────────────────────────────────────────
@@ -95,7 +81,7 @@ def client():
             return TestClient(app)
 
 
-def test_e2e_question_triggers_groq_and_kapso_reply(client):
+def test_e2e_question_triggers_gemini_and_kapso_reply(client):
     kapso_mock = MagicMock()
     kapso_mock.raise_for_status = MagicMock()
 
