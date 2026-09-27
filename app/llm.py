@@ -3,7 +3,7 @@ import requests
 from app.config import GEMINI_API_KEY
 
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NVIDIA_MODEL = "meta/llama-3.1-8b-instruct"
+NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
 
 
 def chat(messages: list[dict], max_tokens: int = 300, temperature: float = 0.7) -> str:
