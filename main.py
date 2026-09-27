@@ -57,10 +57,10 @@ async def webhook(request: Request):
         logger.info("Ignoring event: %s", event)
         return Response(status_code=200)
 
-    # v2 payload may use top-level body or nested under "data"
-    data = body.get("data", body)
+    # Kapso v2 payload: message is under body["message"]
+    data = body.get("message", body.get("data", {}))
     msg_type = data.get("type", "")
-    logger.info("msg_type: %s | data keys: %s", msg_type, list(data.keys()))
+    logger.info("msg_type: %s", msg_type)
 
     if msg_type != "text":
         return Response(status_code=200)
