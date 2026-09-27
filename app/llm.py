@@ -3,7 +3,7 @@ import requests
 from app.config import GEMINI_API_KEY
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_MODEL = "google/gemma-4-26b-a4b-it:free"
+OPENROUTER_MODEL = "nvidia/nemotron-3.5-lightning:free"
 
 
 def chat(messages: list[dict], max_tokens: int = 300, temperature: float = 0.7) -> str:
@@ -21,7 +21,7 @@ def chat(messages: list[dict], max_tokens: int = 300, temperature: float = 0.7) 
     for attempt in range(2):
         resp = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=20)
         if resp.status_code == 429 and attempt == 0:
-            time.sleep(5)
+            time.sleep(10)
             continue
         if not resp.ok:
             import logging
