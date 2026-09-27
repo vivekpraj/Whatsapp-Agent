@@ -56,14 +56,20 @@ async def webhook(request: Request):
     sender = data.get("from", "")
 
     intent = classify(text)
+    logger.info("Message from %s | intent: %s | text: %s", sender, intent, text)
 
-    if intent == "link":
-        reply = handle_link(text)
-    elif intent == "reminder":
-        reply = handle_reminder(text, sender)
-    else:
-        reply = handle_qa(text)
+    try:
+        if intent == "link":
+            reply = handle_link(text)
+        elif intent == "reminder":
+            reply = handle_reminder(text, sender)
+        else:
+            reply = handle_qa(text)
+    except Exception as e:
+        logger.exception("Handler error for intent=%s: %s", intent, e)
+        reply = "Sorry, something went wrong on my end."
 
+    logger.info("Reply: %s", reply)
     send_reply(sender, reply)
 
     return {"received": True, "from": sender, "text": text, "intent": intent, "reply": reply}
