@@ -16,9 +16,11 @@ logger = logging.getLogger(__name__)
 PARSE_PROMPT = (
     "You are a JSON extraction tool. Output ONLY a single JSON object, no explanation, no thinking, no markdown.\n"
     "Today in IST: {now}.\n"
-    "Extract the reminder from the user message and output exactly:\n"
-    '{{"datetime_ist": "2026-09-28T10:00", "task": "mail a client"}}\n'
-    "Use the real date and time values. If time is unclear, set datetime_ist to null."
+    "The user will give a reminder in natural language with 12-hour time (e.g. '11:55 pm', '6am', '3.30 PM').\n"
+    "Convert to 24-hour ISO datetime. Examples: '11:55 pm' = 23:55, '6am' = 06:00, '3.30 PM' = 15:30.\n"
+    "Output exactly:\n"
+    '{{"datetime_ist": "YYYY-MM-DDTHH:MM", "task": "short task description"}}\n'
+    "If time is unclear, set datetime_ist to null."
 )
 
 
@@ -35,25 +37,33 @@ def _parse_reminder_with_gemini(text: str) -> dict | None:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text},
         ],
-        max_tokens=400,
+        max_tokens=600,
         temperature=0,
     )
 
     logger.info("LLM raw response: %s", raw)
 
-    # Strip <think>...</think> blocks and anything before the first {
+    # Strip <think>...</think> blocks
     raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
-    if "{" in raw:
-        raw = raw[raw.index("{"):]
 
-    # Extract JSON block
-    json_match = re.search(r"\{.*?\}", raw, re.DOTALL)
-    if not json_match:
+    # Find ALL JSON objects — take the LAST one (the model's final answer, not examples in thinking)
+    all_matches = list(re.finditer(r"\{[^{}]*\}", raw, re.DOTALL))
+    if not all_matches:
         logger.warning("No JSON found in LLM response")
         return None
 
-    parsed = json.loads(json_match.group())
-    if not parsed.get("datetime_ist") or not parsed.get("task"):
+    parsed = None
+    for match in reversed(all_matches):
+        try:
+            candidate = json.loads(match.group())
+            if candidate.get("datetime_ist") and candidate.get("task"):
+                parsed = candidate
+                break
+        except json.JSONDecodeError:
+            continue
+
+    if not parsed:
+        logger.warning("No valid JSON with datetime_ist+task found in LLM response")
         return None
 
     return parsed
