@@ -50,7 +50,7 @@ app = FastAPI(title="WhatsApp Personal AI Assistant", lifespan=lifespan)
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return Response(content="ok", media_type="text/plain")
 
 
 @app.post("/webhook")
