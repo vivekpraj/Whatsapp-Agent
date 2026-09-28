@@ -71,15 +71,17 @@ def extract_note(text: str, url: str) -> str:
 
 
 def _generate_topic(content: str, url: str) -> str:
-    """Ask Gemini to summarize page content into a single topic line."""
+    """Summarize page content into a single topic line, stripping model reasoning."""
+    import re as _re
     try:
-        return chat(
+        raw = chat(
             messages=[
                 {
                     "role": "system",
                     "content": (
                         "You summarize web page content into a single short topic line "
-                        "of at most 10 words. No punctuation at the end. Plain text only."
+                        "of at most 10 words. Output ONLY the topic line, no explanation, "
+                        "no thinking, no markdown. Plain text only."
                     ),
                 },
                 {
@@ -87,20 +89,33 @@ def _generate_topic(content: str, url: str) -> str:
                     "content": f"URL: {url}\n\nContent:\n{content}",
                 },
             ],
-            max_tokens=30,
+            max_tokens=200,
             temperature=0,
         )
+        # Strip <think>...</think> blocks
+        raw = _re.sub(r"<think>.*?</think>", "", raw, flags=_re.DOTALL).strip()
+        # Strip lines that look like thinking preamble
+        lines = [l.strip() for l in raw.splitlines() if l.strip()]
+        for line in lines:
+            lower = line.lower()
+            if any(lower.startswith(p) for p in (
+                "here's", "here is", "let me", "i need", "i will", "step", "1.", "•", "-"
+            )):
+                continue
+            if len(line) < 150:
+                return line
+        return ""
     except Exception:
         return ""
 
 
 def get_topic(url: str, link_type: str) -> str:
     """
-    Try Jina Reader → Groq summarization.
+    Try Jina Reader → LLM summarization.
     Falls back to a sensible default if blocked or failed.
     """
     content = fetch_content(url)
-    if content:
+    if content and len(content) > 100:
         topic = _generate_topic(content, url)
         if topic:
             return topic

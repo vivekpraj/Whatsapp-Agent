@@ -7,19 +7,40 @@ from fastapi import FastAPI, Request, Response, HTTPException
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Deduplication: track recently processed message IDs (max 500)
+_seen_ids: set[str] = set()
+_seen_ids_order: list[str] = []
+
 from app.config import PORT
 from app.security import verify_signature
 from app.classifier import classify
 from app.kapso import send_reply
 from app.handlers.link_handler import handle_link
-from app.handlers.reminder_handler import handle_reminder
+from app.handlers.reminder_handler import handle_reminder, _fire_reminder
 from app.handlers.qa_handler import handle_qa
 from app.scheduler import start_scheduler, shutdown_scheduler
+from app.reminder_store import load_pending
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     start_scheduler()
+    # Reload reminders that survived a server restart
+    try:
+        from app.scheduler import scheduler
+        pending = load_pending()
+        for r in pending:
+            scheduler.add_job(
+                func=_fire_reminder,
+                trigger="date",
+                run_date=r["run_dt"],
+                args=[r["task"], r["phone"], r["reminder_id"]],
+                misfire_grace_time=300,
+            )
+        if pending:
+            logger.info("Reloaded %d pending reminder(s) from Sheets", len(pending))
+    except Exception:
+        logger.exception("Failed to reload reminders on startup")
     yield
     shutdown_scheduler()
 
@@ -59,6 +80,18 @@ async def webhook(request: Request):
 
     # Kapso v2 payload: message is under body["message"]
     data = body.get("message", body.get("data", {}))
+
+    # Deduplicate: skip if we already processed this message ID
+    msg_id = data.get("id", "")
+    if msg_id and msg_id in _seen_ids:
+        logger.info("Duplicate message %s — skipping", msg_id)
+        return Response(status_code=200)
+    if msg_id:
+        _seen_ids.add(msg_id)
+        _seen_ids_order.append(msg_id)
+        if len(_seen_ids_order) > 500:
+            _seen_ids.discard(_seen_ids_order.pop(0))
+
     msg_type = data.get("type", "")
     logger.info("msg_type: %s", msg_type)
 

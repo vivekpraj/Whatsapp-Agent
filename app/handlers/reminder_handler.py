@@ -5,10 +5,10 @@ from datetime import datetime
 
 import pytz
 
-from app.config import USER_PHONE_NUMBER
 from app.llm import chat
 from app.scheduler import scheduler
 from app.kapso import send_reply
+from app.reminder_store import save_reminder, mark_done
 
 IST = pytz.timezone("Asia/Kolkata")
 logger = logging.getLogger(__name__)
@@ -59,8 +59,10 @@ def _parse_reminder_with_gemini(text: str) -> dict | None:
     return parsed
 
 
-def _fire_reminder(task: str, to: str):
+def _fire_reminder(task: str, to: str, reminder_id: str = ""):
     send_reply(to, f"Reminder: {task}")
+    if reminder_id:
+        mark_done(reminder_id)
 
 
 def handle_reminder(text: str, sender: str) -> str:
@@ -80,12 +82,14 @@ def handle_reminder(text: str, sender: str) -> str:
     if run_dt <= datetime.now(IST):
         return "That time has already passed. Please set a future reminder."
 
+    reminder_id = save_reminder(run_dt, task, sender)
+
     scheduler.add_job(
         func=_fire_reminder,
         trigger="date",
         run_date=run_dt,
-        args=[task, sender],
-        misfire_grace_time=60,
+        args=[task, sender, reminder_id],
+        misfire_grace_time=300,
     )
 
     formatted = run_dt.strftime("%I:%M %p, %d %b %Y")
