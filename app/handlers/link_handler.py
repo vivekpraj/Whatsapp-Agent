@@ -122,10 +122,14 @@ def get_topic(url: str, link_type: str) -> str:
     return FALLBACK_TOPICS.get(link_type, "Web link")
 
 
-def handle_link(text: str) -> str:
+# Pending links awaiting a user-supplied topic: {sender: {"url": url, "link_type": link_type, "note": note}}
+_pending_links: dict[str, dict] = {}
+
+
+def handle_link(text: str, sender: str) -> str:
     """
-    Extract the URL, classify it, fetch topic via Jina+Groq,
-    save a row to Google Sheets, and return a reply string.
+    Extract the URL and ask the user what topic to save it under.
+    State is stored in _pending_links until the user replies.
     """
     url = extract_url(text)
     if not url:
@@ -134,14 +138,32 @@ def handle_link(text: str) -> str:
     domain = extract_domain(url)
     link_type = classify_link_type(domain)
     note = extract_note(text, url)
-    topic = get_topic(url, link_type)
+
+    _pending_links[sender] = {"url": url, "link_type": link_type, "note": note}
+    return "Got the link! What topic should I save it under?"
+
+
+def save_link_with_topic(sender: str, topic: str) -> str:
+    """
+    Called when the user replies with a topic for their pending link.
+    Saves to Sheets and clears pending state.
+    """
+    pending = _pending_links.pop(sender, None)
+    if not pending:
+        return None  # caller will fall through to QA handler
+
+    url = pending["url"]
+    link_type = pending["link_type"]
+    note = pending["note"]
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Columns: Timestamp | URL | Type | Domain | Note | Topic
-    row = [timestamp, url, link_type, domain, note, topic]
-
+    row = [timestamp, url, link_type, extract_domain(url), note, topic]
     sheet = _get_sheet()
     sheet.append_row(row, value_input_option="USER_ENTERED")
 
     type_label = link_type.capitalize()
-    return f"Saved your {type_label} link to Sheets. Topic: {topic}"
+    return f"Saved! {type_label} link tagged as: {topic}"
+
+
+def has_pending_link(sender: str) -> bool:
+    return sender in _pending_links

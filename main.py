@@ -15,7 +15,7 @@ from app.config import PORT
 from app.security import verify_signature
 from app.classifier import classify
 from app.kapso import send_reply
-from app.handlers.link_handler import handle_link
+from app.handlers.link_handler import handle_link, has_pending_link, save_link_with_topic
 from app.handlers.reminder_handler import handle_reminder, _fire_reminder
 from app.handlers.qa_handler import handle_qa
 from app.scheduler import start_scheduler, shutdown_scheduler
@@ -103,12 +103,26 @@ async def webhook(request: Request):
     if sender and not sender.startswith("+"):
         sender = "+" + sender
 
+    # If sender has a pending link, their reply is the topic — save immediately
+    if has_pending_link(sender):
+        logger.info("Message from %s | pending link topic: %s", sender, text)
+        try:
+            reply = save_link_with_topic(sender, text.strip())
+            if reply is None:
+                reply = handle_qa(text)
+        except Exception as e:
+            logger.exception("Error saving link with topic: %s", e)
+            reply = "Sorry, something went wrong saving your link."
+        logger.info("Reply: %s", reply)
+        send_reply(sender, reply)
+        return {"received": True, "from": sender, "text": text, "intent": "link_topic", "reply": reply}
+
     intent = classify(text)
     logger.info("Message from %s | intent: %s | text: %s", sender, intent, text)
 
     try:
         if intent == "link":
-            reply = handle_link(text)
+            reply = handle_link(text, sender)
         elif intent == "reminder":
             reply = handle_reminder(text, sender)
         else:

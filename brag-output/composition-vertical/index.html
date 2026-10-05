@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #0a0a0a;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* ── Scene 1: Hook ── */
+      .hook-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 72px;
+        padding: 0 80px;
+      }
+      .wa-logo {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: #25D366;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .wa-logo svg { width: 100px; height: 100px; }
+      .hook-text {
+        color: #FFFFFF;
+        font-size: 88px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+        line-height: 1.15;
+      }
+      .hook-word { display: inline-block; }
+
+      /* ── Scenes 2-4: Chat ── */
+      .chat-scene-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 60px;
+        width: 100%;
+        padding: 0 80px;
+      }
+      .scene-label {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        text-align: center;
+        width: 100%;
+      }
+      .scene-label-tag {
+        color: #25D366;
+        font-size: 28px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        opacity: 0;
+      }
+      .scene-label-title {
+        color: #FFFFFF;
+        font-size: 58px;
+        font-weight: 700;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        opacity: 0;
+      }
+      .phone-frame {
+        width: 560px;
+        height: 840px;
+        background: #111b21;
+        border-radius: 52px;
+        border: 3px solid #2a3942;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 50px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
+        flex-shrink: 0;
+      }
+      .chat-header {
+        background: #1F2C34;
+        padding: 18px 22px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-shrink: 0;
+        border-bottom: 1px solid #2a3942;
+      }
+      .chat-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #25D366;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: 700;
+        color: #003d1e;
+        flex-shrink: 0;
+      }
+      .chat-name { color: #FFFFFF; font-size: 20px; font-weight: 600; }
+      .chat-status { color: #25D366; font-size: 14px; margin-top: 3px; }
+      .chat-body {
+        flex: 1;
+        padding: 18px 16px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: hidden;
+      }
+      .bubble-out {
+        align-self: flex-end;
+        background: #005C4B;
+        color: #e9edef;
+        padding: 11px 15px;
+        border-radius: 12px 3px 12px 12px;
+        font-size: 16px;
+        max-width: 88%;
+        line-height: 1.45;
+        word-break: break-word;
+      }
+      .bubble-in {
+        align-self: flex-start;
+        background: #1F2C34;
+        color: #e9edef;
+        padding: 11px 15px;
+        border-radius: 3px 12px 12px 12px;
+        font-size: 16px;
+        max-width: 88%;
+        line-height: 1.45;
+      }
+      .check { color: #25D366; font-weight: 700; }
+
+      /* ── Scene 5: Outro ── */
+      .outro-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 44px;
+        padding: 0 80px;
+      }
+      .outro-logo {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: #25D366;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .outro-logo svg { width: 84px; height: 84px; }
+      .outro-title {
+        color: #FFFFFF;
+        font-size: 88px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        text-align: center;
+        line-height: 1.05;
+      }
+      .outro-tagline {
+        color: #25D366;
+        font-size: 46px;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        text-align: center;
+      }
+
+      /* Fade overlay */
+      .fade-overlay {
+        position: absolute;
+        inset: 0;
+        background: #0a0a0a;
+        pointer-events: none;
+        z-index: 200;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="20"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- ══ Scene 1: Hook (0–3s) ══ -->
+      <section id="scene-hook" class="clip" data-start="0" data-duration="3.5" data-track-index="0">
+        <div class="hook-inner">
+          <div id="wa-logo" class="wa-logo">
+            <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </div>
+          <div class="hook-text">
+            <span class="hook-word" id="w1">Your</span>
+            <span class="hook-word" id="w2">AI</span>
+            <span class="hook-word" id="w3">is</span>
+            <span class="hook-word" id="w4">already</span>
+            <span class="hook-word" id="w5">on</span>
+            <span class="hook-word" id="w6">WhatsApp.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Scenes 2-4: Chat features (3–16s) ══ -->
+      <section id="scene-chat" class="clip" data-start="3" data-duration="13" data-track-index="1">
+        <div class="chat-scene-layout">
+          <!-- Top: scene label -->
+          <div class="scene-label" id="scene-label">
+            <div class="scene-label-tag" id="label-tag-link">Save a link</div>
+            <div class="scene-label-title" id="label-title-link">Drop a URL. It goes straight to your Sheets.</div>
+            <div class="scene-label-tag" id="label-tag-reminder" style="display:none">Set a reminder</div>
+            <div class="scene-label-title" id="label-title-reminder" style="display:none">Say when. It fires on time.</div>
+            <div class="scene-label-tag" id="label-tag-qa" style="display:none">Ask anything</div>
+            <div class="scene-label-title" id="label-title-qa" style="display:none">Your AI answers. Instantly.</div>
+          </div>
+          <!-- Below: phone mockup -->
+          <div class="phone-frame" id="phone-frame">
+            <div class="chat-header">
+              <div class="chat-avatar">W</div>
+              <div>
+                <div class="chat-name">WhatsApp AI</div>
+                <div class="chat-status">● online</div>
+              </div>
+            </div>
+            <div class="chat-body">
+              <!-- Scene 2: Link -->
+              <div id="b2-out" class="bubble-out">https://instagram.com/reel/DXEovZ7...</div>
+              <div id="b2-in" class="bubble-in">Saved to Sheets. Topic: Instagram Reel <span class="check">✓</span></div>
+              <!-- Scene 3: Reminder -->
+              <div id="b3-out" class="bubble-out">Remind me at 6pm to call John</div>
+              <div id="b3-in" class="bubble-in">Reminder set for 06:00 PM: call John <span class="check">✓</span></div>
+              <!-- Scene 4: Q&A -->
+              <div id="b4-out" class="bubble-out">What's the capital of France?</div>
+              <div id="b4-in" class="bubble-in">Paris.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ Scene 5: Outro (16–20s) ══ -->
+      <section id="scene-outro" class="clip" data-start="16" data-duration="4" data-track-index="2">
+        <div class="outro-inner">
+          <div id="outro-logo" class="outro-logo">
+            <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+          </div>
+          <div id="outro-title" class="outro-title">WhatsApp AI Assistant</div>
+          <div id="outro-tagline" class="outro-tagline">Link. Reminder. Anything.</div>
+        </div>
+      </section>
+
+      <!-- Fade overlay -->
+      <div id="fade-overlay" class="fade-overlay"></div>
+
+      <!-- Audio: inside root so HF recognises composition context -->
+      <audio id="music" src="assets/music/happy-beats-business-moves-vol-10-by-ende-dot-app.mp3"
+        data-start="0" data-duration="20" data-volume="0.32"></audio>
+      <audio id="sfx-card-1" src="assets/sfx/casino/card-place-1.ogg"
+        data-start="3.5" data-duration="0.69" data-volume="0.55"></audio>
+      <audio id="sfx-drop-1" src="assets/sfx/interface/drop_001.ogg"
+        data-start="4.35" data-duration="0.11" data-volume="0.45"></audio>
+      <audio id="sfx-click-1" src="assets/sfx/interface/click_001.ogg"
+        data-start="4.75" data-duration="0.10" data-volume="0.28"></audio>
+      <audio id="sfx-card-2" src="assets/sfx/casino/card-place-1.ogg"
+        data-start="8.05" data-duration="0.69" data-volume="0.55"></audio>
+      <audio id="sfx-drop-2" src="assets/sfx/interface/drop_001.ogg"
+        data-start="8.9" data-duration="0.11" data-volume="0.45"></audio>
+      <audio id="sfx-click-2" src="assets/sfx/interface/click_001.ogg"
+        data-start="9.3" data-duration="0.10" data-volume="0.28"></audio>
+      <audio id="sfx-card-3" src="assets/sfx/casino/card-place-1.ogg"
+        data-start="12.55" data-duration="0.69" data-volume="0.55"></audio>
+      <audio id="sfx-drop-3" src="assets/sfx/interface/drop_002.ogg"
+        data-start="13.25" data-duration="0.19" data-volume="0.45"></audio>
+      <audio id="sfx-bell" src="assets/sfx/impact/impactBell_heavy_000.ogg"
+        data-start="18.01" data-duration="1.48" data-volume="0.42"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const musicEl = document.getElementById("music");
+
+      // ── Initial states ──
+      gsap.set(["#b2-out","#b2-in","#b3-out","#b3-in","#b4-out","#b4-in"], { opacity: 0 });
+      gsap.set(["#w1","#w2","#w3","#w4","#w5","#w6"], { opacity: 0 });
+      gsap.set(["#wa-logo"], { opacity: 0, scale: 0.7, transformOrigin: "50% 50%" });
+      gsap.set(["#phone-frame"], { opacity: 0, y: 60 });
+      gsap.set(["#label-tag-link","#label-title-link"], { opacity: 0, y: 20 });
+      gsap.set(["#outro-logo"], { opacity: 0, scale: 0.8, transformOrigin: "50% 50%" });
+      gsap.set(["#outro-title","#outro-tagline"], { opacity: 0, y: 28 });
+      gsap.set(["#fade-overlay"], { opacity: 1 });
+
+      // ── Fade in from black ──
+      tl.to("#fade-overlay", { opacity: 0, duration: 0.4, ease: "power2.out" }, 0);
+
+      // ── Scene 1: Hook ──
+      tl.to("#wa-logo", { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)" }, 0.3);
+      const words = ["#w1","#w2","#w3","#w4","#w5","#w6"];
+      words.forEach((id, i) => {
+        tl.fromTo(id, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.28, ease: "power2.out" }, 0.5 + i * 0.22);
+      });
+
+      // ── Transition 1→2 ──
+      tl.to("#phone-frame", { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 3.15);
+      tl.to(["#label-tag-link","#label-title-link"], { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", stagger: 0.1 }, 3.2);
+
+      // ── Scene 2: Link bubbles ──
+      tl.fromTo("#b2-out", { x: 55, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 3.5);
+      tl.fromTo("#b2-in", { x: -55, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 4.35);
+
+      // ── Transition 2→3: swap labels ──
+      tl.to(["#label-tag-link","#label-title-link"], { opacity: 0, y: -20, duration: 0.25, ease: "power2.in" }, 7.4);
+      tl.set(["#label-tag-reminder","#label-title-reminder"], { display: "block", opacity: 0, y: 20 }, 7.6);
+      tl.to(["#label-tag-reminder","#label-title-reminder"], { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", stagger: 0.1 }, 7.65);
+
+      // ── Scene 3: Reminder bubbles ──
+      tl.fromTo("#b3-out", { x: 55, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 8.05);
+      tl.fromTo("#b3-in", { x: -55, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 8.9);
+
+      // ── Transition 3→4: swap labels ──
+      tl.to(["#label-tag-reminder","#label-title-reminder"], { opacity: 0, y: -20, duration: 0.25, ease: "power2.in" }, 11.8);
+      tl.set(["#label-tag-qa","#label-title-qa"], { display: "block", opacity: 0, y: 20 }, 12.0);
+      tl.to(["#label-tag-qa","#label-title-qa"], { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", stagger: 0.1 }, 12.05);
+
+      // ── Scene 4: Q&A bubbles ──
+      tl.fromTo("#b4-out", { x: 55, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 12.55);
+      tl.fromTo("#b4-in", { x: -55, opacity: 0 }, { x: 0, opacity: 1, duration: 0.28, ease: "power2.out" }, 13.25);
+
+      // ── Scene 5: Outro ──
+      tl.to("#outro-logo", { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, 16.4);
+      tl.to("#outro-title", { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 16.9);
+      tl.to("#outro-tagline", { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, 17.5);
+
+      // ── Logo glow pulse (tied to bell at 18.01s) ──
+      tl.to("#outro-logo", {
+        boxShadow: "0 0 60px 30px rgba(37,211,102,0.45)",
+        duration: 0.4,
+        ease: "power2.out"
+      }, 18.01);
+      tl.to("#outro-logo", {
+        boxShadow: "0 0 24px 10px rgba(37,211,102,0.2)",
+        duration: 0.8,
+        ease: "power2.in"
+      }, 18.41);
+
+      // ── Music volume fade-out ──
+      tl.to(musicEl, { volume: 0, duration: 1.5, ease: "power1.in" }, 18.5);
+
+      // ── Fade to black ──
+      tl.to("#fade-overlay", { opacity: 1, duration: 0.8, ease: "power2.in" }, 19.2);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
